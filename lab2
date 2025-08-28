@@ -1,0 +1,82 @@
+import random
+
+CHROM_LENGTH = 5
+CROSS_RATE = 0.8
+MUT_RATE = 0.1
+
+def fitness(n):
+    return n ** 2
+
+def decode(b):
+    return int(b, 2)
+
+def encode(n):
+    return format(n, f'0{CHROM_LENGTH}b')
+
+def roulette_selection(pop, fitness_values):
+    total_fit = sum(fitness_values)
+    pick = random.uniform(0, total_fit)
+    curr = 0
+    for i, f in enumerate(fitness_values):
+        curr += f
+        if curr > pick:
+            return pop[i]
+    return pop[-1]
+
+def crossover(p1, p2):
+    if random.random() < CROSS_RATE:
+        point = random.randint(1, CHROM_LENGTH - 1)
+        c1 = p1[:point] + p2[point:]
+        c2 = p2[:point] + p1[point:]
+        return c1, c2
+    return p1, p2
+
+def mutate(chrom):
+    chrom_list = list(chrom)
+    for j in range(CHROM_LENGTH):
+        if random.random() < MUT_RATE:
+            chrom_list[j] = '1' if chrom_list[j] == '0' else '0'
+    return ''.join(chrom_list)
+
+def genetic_algorithm():
+    user_ip = input("enter ini pop values (e.g. 1 2 3 4): ")
+    values = list(map(int, user_ip.split()))
+    generations = int(input("enter num of gen: "))
+
+    POP_SIZE = len(values)
+    population = [encode(n) for n in values]
+
+    print("\ini pop:", population, [decode(c) for c in population])
+
+    for gen in range(1, generations + 1):
+        decoded = [decode(c) for c in population]
+        fitness_values = [fitness(n) for n in decoded]
+
+        total_fit = sum(fitness_values)
+        probs = [f/total_fit for f in fitness_values]
+
+        print(f"\gen {gen}:")
+        for i in range(POP_SIZE):
+            print(f"chromosome {i+1}: {population[i]}, decoded={decoded[i]}, "
+                  f"fitness={fitness_values[i]}, prob={probs[i]:.3f}")
+
+        new_pop = []
+        while len(new_pop) < POP_SIZE:
+            p1 = roulette_selection(population, fitness_values)
+            p2 = roulette_selection(population, fitness_values)
+            c1, c2 = crossover(p1, p2)
+            c1, c2 = mutate(c1), mutate(c2)
+            new_pop.extend([c1, c2])
+
+        population = new_pop[:POP_SIZE]
+
+    decoded = [decode(c) for c in population]
+    fitness_values = [fitness(n) for n in decoded]
+    best_idx = fitness_values.index(max(fitness_values))
+
+    print("\final soln:")
+    print("chromosome:", population[best_idx],
+          "decoded:", decoded[best_idx],
+          "fitness:", fitness_values[best_idx])
+
+genetic_algorithm()
